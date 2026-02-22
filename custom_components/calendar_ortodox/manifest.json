@@ -1,0 +1,11 @@
+{
+  "domain": "calendar_ortodox",
+  "name": "Calendar Ortodox",
+  "codeowners": ["@emanuelbesliu"],
+  "config_flow": true,
+  "documentation": "https://github.com/emanuelbesliu/calendar_ortodox",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/emanuelbesliu/calendar_ortodox/issues",
+  "requirements": ["beautifulsoup4==4.12.3", "lxml==5.1.0"],
+  "version": "1.0.0"
+}

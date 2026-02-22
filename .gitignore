@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Home Assistant
+*.log
+*.db
+*.db-shm
+*.db-wal
+secrets.yaml
+known_devices.yaml
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Ignore other integrations (keep only calendar_ortodox)
+/orange/
+/hidroelectrica/
+/custom_components/adminislocuinte/
+/custom_components/bft/
+/automations/

@@ -1,0 +1,21 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Setup Calendar Ortodox",
+        "description": "Configure your Orthodox Calendar integration",
+        "data": {
+          "language": "Language",
+          "include_fasting": "Include fasting information",
+          "include_readings": "Include liturgical readings"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the calendar service. Please try again later."
+    },
+    "abort": {
+      "already_configured": "Calendar Ortodox is already configured."
+    }
+  }
+}

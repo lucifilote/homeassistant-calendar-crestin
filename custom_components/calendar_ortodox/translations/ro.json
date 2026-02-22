@@ -1,0 +1,21 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configurare Calendar Ortodox",
+        "description": "Configurați integrarea Calendarului Ortodox",
+        "data": {
+          "language": "Limba",
+          "include_fasting": "Include informații despre post",
+          "include_readings": "Include citirile liturgice"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Conexiunea la serviciul calendarului a eșuat. Vă rugăm să încercați din nou mai târziu."
+    },
+    "abort": {
+      "already_configured": "Calendarul Ortodox este deja configurat."
+    }
+  }
+}
