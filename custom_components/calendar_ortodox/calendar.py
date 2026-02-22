@@ -8,6 +8,7 @@ from typing import Any
 from homeassistant.components.calendar import CalendarEntity, CalendarEvent
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.util import dt as dt_util
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -37,15 +38,22 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Calendar Ortodox calendar platform."""
-    coordinator: CalendarOrtodoxDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-
-    async_add_entities(
-        [
+    _LOGGER.info("Setting up Calendar Ortodox calendar platform")
+    
+    try:
+        coordinator: CalendarOrtodoxDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+        
+        calendars = [
             OrthodoxCalendar(coordinator, entry),
             OrthodoxFeastDaysCalendar(coordinator, entry),
-        ],
-        True,
-    )
+        ]
+        
+        _LOGGER.info("Adding %d calendar entities", len(calendars))
+        async_add_entities(calendars, True)
+        _LOGGER.info("Calendar entities added successfully")
+        
+    except Exception as err:
+        _LOGGER.error("Error setting up calendar platform: %s", err, exc_info=True)
 
 
 class OrthodoxCalendar(CoordinatorEntity, CalendarEntity):
@@ -60,6 +68,7 @@ class OrthodoxCalendar(CoordinatorEntity, CalendarEntity):
         super().__init__(coordinator)
         self._attr_name = "Calendar Ortodox"
         self._attr_unique_id = f"{entry.entry_id}_calendar"
+        self._attr_has_entity_name = False
         self._entry = entry
         self._event: CalendarEvent | None = None
 
@@ -143,8 +152,8 @@ class OrthodoxCalendar(CoordinatorEntity, CalendarEntity):
         
         description = "\n".join(description_parts) if description_parts else summary
         
-        # Create event - all-day events
-        start = datetime.combine(day_info.date, datetime.min.time())
+        # Create event - all-day events with timezone
+        start = dt_util.start_of_local_day(datetime.combine(day_info.date, datetime.min.time()))
         end = start + timedelta(days=1)
         
         return CalendarEvent(
@@ -206,6 +215,7 @@ class OrthodoxFeastDaysCalendar(CoordinatorEntity, CalendarEntity):
         super().__init__(coordinator)
         self._attr_name = "Calendar Ortodox - Sărbători"
         self._attr_unique_id = f"{entry.entry_id}_feast_days"
+        self._attr_has_entity_name = False
         self._entry = entry
         self._event: CalendarEvent | None = None
 
@@ -288,8 +298,8 @@ class OrthodoxFeastDaysCalendar(CoordinatorEntity, CalendarEntity):
         
         description = "\n".join(description_parts) if description_parts else summary
         
-        # Create event - all-day events
-        start = datetime.combine(day_info.date, datetime.min.time())
+        # Create event - all-day events with timezone
+        start = dt_util.start_of_local_day(datetime.combine(day_info.date, datetime.min.time()))
         end = start + timedelta(days=1)
         
         return CalendarEvent(
