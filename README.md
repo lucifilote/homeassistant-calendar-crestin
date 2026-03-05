@@ -1,10 +1,12 @@
 # Calendar Ortodox - Home Assistant Integration
 
+[![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
+[![GitHub Release](https://img.shields.io/github/v/release/emanuelbesliu/homeassistant-calendar-crestin-ortodox)](https://github.com/emanuelbesliu/homeassistant-calendar-crestin-ortodox/releases/latest)
+[![License](https://img.shields.io/github/license/emanuelbesliu/homeassistant-calendar-crestin-ortodox)](LICENSE)
+
 **Integrare custom Home Assistant pentru [calendar creștin ortodox](https://www.noutati-ortodoxe.ro/calendar-ortodox/)**
 
 Monitorizează zilnic sfinții, sărbătorile, posturile și citirile liturgice direct din Home Assistant.
-
-> **Status:** ✅ **v1.0.7 - Stable Release**
 
 ---
 
