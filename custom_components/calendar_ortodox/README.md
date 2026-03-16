@@ -199,6 +199,12 @@ For issues, questions, or feature requests, please open an issue on [GitHub](htt
 - Calendar data provided by [noutati-ortodoxe.ro](https://www.noutati-ortodoxe.ro)
 - Integration developed by @emanuelbesliu
 
+## ☕ Support the Developer
+
+If you find this project useful, consider buying me a coffee!
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/emanuelbesliu)
+
 ## License
 
 This integration is provided as-is for personal use. The calendar data belongs to noutati-ortodoxe.ro.

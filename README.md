@@ -364,6 +364,12 @@ Datele calendarului aparțin noutati-ortodoxe.ro și sunt folosite cu respect pe
 
 ---
 
+## ☕ Support the Developer
+
+If you find this project useful, consider buying me a coffee!
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/emanuelbesliu)
+
+---
+
 **Dezvoltat cu ❤️ și credință de Emanuel Besliu (@emanuelbesliu)**
-# Test dependency update
-# Test v2
