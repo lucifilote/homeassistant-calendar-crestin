@@ -3,6 +3,7 @@
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 [![GitHub Release](https://img.shields.io/github/v/release/emanuelbesliu/homeassistant-calendar-crestin-ortodox)](https://github.com/emanuelbesliu/homeassistant-calendar-crestin-ortodox/releases/latest)
 [![License](https://img.shields.io/github/license/emanuelbesliu/homeassistant-calendar-crestin-ortodox)](LICENSE)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/emanuelbesliu)
 
 **Integrare custom Home Assistant pentru [calendar creștin ortodox](https://www.noutati-ortodoxe.ro/calendar-ortodox/)**
 
