@@ -597,13 +597,25 @@ class CatholicCalendarAPI:
         content_clean = re.sub(r"&#8224;", "", content)
         content_clean = re.sub(r"\s+", " ", content_clean).strip()
 
+        feast_name = None
+        saints = content_clean
+
         parts = content_clean.split("Fer.")
         if len(parts) > 1:
             feast_name = parts[0].strip()
             saints = "Fer." + parts[1].strip()
-        else:
-            feast_name = None
-            saints = content_clean
+        elif is_sunday and has_dagger:
+            duminica_match = re.match(r"(DUMINICA[^S]*?)\s*Sf\.", content_clean)
+            if duminica_match:
+                feast_name = duminica_match.group(1).strip()
+                saints = content_clean
+            else:
+                feast_name = (
+                    content_clean.split("Sf.")[0].strip()
+                    if "Sf." in content_clean
+                    else content_clean
+                )
+                saints = content_clean
 
         return CatholicCalendarDay(
             day=day_num,
