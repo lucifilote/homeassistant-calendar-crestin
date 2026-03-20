@@ -538,9 +538,10 @@ class CatholicCalendarAPI:
         month_data = []
 
         page_text = soup.get_text()
+        page_text = re.sub(r"\s+", " ", page_text)
 
         day_pattern = re.compile(
-            r"(\d+)\s*([LMJVSD])\s*(.+?)(?=\d+\s+[LMJVSD]|$)", re.DOTALL
+            r"(\d+)\s+([LMJVSD])\s+(.+?)(?=\d+\s+[LMJVSD]|$)", re.DOTALL
         )
 
         matches = day_pattern.findall(page_text)
