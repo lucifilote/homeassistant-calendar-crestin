@@ -543,7 +543,7 @@ class CatholicCalendarAPI:
         for match in matches:
             day_num = int(match[0])
             day_of_week = match[1].strip()
-            content = match[2].strip().replace("\n", " ").replace("\r", "")
+            content = match[2].strip()
 
             if not content:
                 continue
@@ -560,6 +560,67 @@ class CatholicCalendarAPI:
             "Parsed %d days for Catholic calendar %d/%d", len(month_data), month, year
         )
         return month_data
+
+    def _parse_html_content(
+        self,
+        day_num: int,
+        day_of_week: str,
+        content_cell,
+        year: int,
+        month: int,
+        is_sunday: bool,
+    ) -> CatholicCalendarDay:
+        """Parse HTML cell content into CatholicCalendarDay."""
+        content_text = content_cell.get_text(separator=" ", strip=True)
+        content_text = re.sub(r"\s+", " ", content_text)
+
+        has_dagger = "&#8224;" in content_text or "†" in str(content_cell)
+        has_double_star = "**" in content_text
+        has_single_star = "*" in content_text
+
+        if has_dagger and has_double_star:
+            feast_level = CATHOLIC_FEAST_LEVEL_SOLEMNITY
+        elif has_dagger:
+            feast_level = CATHOLIC_FEAST_LEVEL_FEAST
+        elif has_double_star:
+            feast_level = CATHOLIC_FEAST_LEVEL_MEMORIAL
+        elif has_single_star:
+            feast_level = CATHOLIC_FEAST_LEVEL_OPTIONAL
+        else:
+            feast_level = CATHOLIC_FEAST_LEVEL_OPTIONAL
+
+        feast_name = None
+        saints = content_text
+
+        content_text = re.sub(r"([a-zăâîșț])&#8224;", r"\1 ", content_text)
+        content_text = re.sub(r"([a-zăâîșț])†", r"\1 ", content_text)
+        content_text = re.sub(r"\s+", " ", content_text).strip()
+
+        if is_sunday and has_dagger:
+            if "Sf." in content_text:
+                parts = content_text.split("Sf.", 1)
+                feast_name = parts[0].strip()
+                saints = "Sf." + parts[1].strip()
+            else:
+                feast_name = content_text
+        else:
+            parts = content_text.split("Fer.")
+            if len(parts) > 1:
+                feast_name = parts[0].strip()
+                saints = "Fer." + parts[1].strip()
+
+        feast_name = feast_name or saints
+
+        return CatholicCalendarDay(
+            day=day_num,
+            month=month,
+            year=year,
+            day_of_week=day_of_week,
+            saints=saints,
+            feast_name=feast_name,
+            feast_level=feast_level,
+            is_sunday=is_sunday,
+        )
 
     def _parse_content(
         self,
@@ -589,31 +650,25 @@ class CatholicCalendarAPI:
             feast_level = CATHOLIC_FEAST_LEVEL_OPTIONAL
 
         content_clean = re.sub(r"&#8224;", " ", content)
+        content_clean = re.sub(r"([a-zăâîșț])†", r"\1 ", content_clean)
         content_clean = re.sub(r"†", " ", content_clean)
-        content_clean = re.sub(r"\s+", " ", content_clean).strip()
-        content_clean = re.sub(r"\s+([A-Z])", r" \1", content_clean)
-        content_clean = re.sub(r"([a-z])\s+([A-Z])", r"\1 \2", content_clean)
         content_clean = re.sub(r"\s+", " ", content_clean).strip()
 
         feast_name = None
         saints = content_clean
 
-        parts = content_clean.split("Fer.")
-        if len(parts) > 1:
-            feast_name = parts[0].strip()
-            saints = "Fer." + parts[1].strip()
-        elif is_sunday and has_dagger:
-            duminica_match = re.match(r"(DUMINICA[^S]*?)\s*Sf\.", content_clean)
-            if duminica_match:
-                feast_name = duminica_match.group(1).strip()
-                saints = content_clean
+        if is_sunday and has_dagger:
+            if "Sf." in content_clean:
+                parts = content_clean.split("Sf.", 1)
+                feast_name = parts[0].strip()
+                saints = "Sf." + parts[1].strip()
             else:
-                feast_name = (
-                    content_clean.split("Sf.")[0].strip()
-                    if "Sf." in content_clean
-                    else content_clean
-                )
-                saints = content_clean
+                feast_name = content_clean
+        else:
+            parts = content_clean.split("Fer.")
+            if len(parts) > 1:
+                feast_name = parts[0].strip()
+                saints = "Fer." + parts[1].strip()
 
         return CatholicCalendarDay(
             day=day_num,
@@ -622,44 +677,6 @@ class CatholicCalendarAPI:
             day_of_week=day_of_week,
             saints=saints,
             feast_name=feast_name or saints,
-            feast_level=feast_level,
-            is_sunday=is_sunday,
-        )
-
-    def _parse_feast_row(
-        self,
-        day_num: int,
-        day_of_week: str,
-        content_cell,
-        year: int,
-        month: int,
-        is_sunday: bool,
-    ) -> CatholicCalendarDay:
-        """Parse a feast day row (stil2)."""
-        text = content_cell.get_text(separator=" ", strip=True)
-
-        feast_name = None
-        saints = ""
-
-        parts = text.split("Fer.")
-        if len(parts) > 1:
-            feast_with_saints = parts[0].strip()
-            saints_part = "Fer." + parts[1].strip()
-            feast_name = feast_with_saints
-            saints = saints_part
-        else:
-            saints = text
-
-        feast_name = feast_name or saints
-        feast_level = self._determine_feast_level(content_cell)
-
-        return CatholicCalendarDay(
-            day=day_num,
-            month=month,
-            year=year,
-            day_of_week=day_of_week,
-            saints=saints,
-            feast_name=feast_name,
             feast_level=feast_level,
             is_sunday=is_sunday,
         )
