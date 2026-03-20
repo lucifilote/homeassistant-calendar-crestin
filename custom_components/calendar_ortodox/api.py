@@ -249,25 +249,21 @@ class CalendarOrtodoxAPI:
                 is_feast = CSS_CLASS_SARBATOARE in row_classes
                 is_sunday = CSS_CLASS_DUMINICA in row_classes or day_of_week == "D"
 
-                # Extract saints and determine feast level
+                content_text = content_cell.get_text()
+
+                # Determine feast level from content (check for crosses/daggers)
+                feast_level = FEAST_LEVEL_NORMAL
+                if "(†)" in content_text:
+                    feast_level = FEAST_LEVEL_GREAT
+                    is_feast = True
+                elif "†" in content_text:
+                    feast_level = FEAST_LEVEL_MAJOR
+                    is_feast = True
+
+                # Extract saints
                 saints_link = content_cell.find("a", class_="sinaxar")
                 if saints_link:
                     saints_text = saints_link.get_text(strip=True)
-
-                    # Log for debugging
-                    if day_num == 25 and month_idx == 3:
-                        _LOGGER.info(
-                            "March 25 - Found sinaxar link with text: %r", saints_text
-                        )
-
-                    # Determine feast level by counting crosses/daggers
-                    feast_level = FEAST_LEVEL_NORMAL
-                    if is_feast or "†" in saints_text or "(†)" in saints_text:
-                        if "(†)" in saints_text:
-                            feast_level = FEAST_LEVEL_GREAT
-                        elif "†" in saints_text:
-                            feast_level = FEAST_LEVEL_MAJOR
-                        is_feast = True
                 else:
                     # No sinaxar link - extract text more carefully
                     if day_num == 25 and month_idx == 3:
@@ -293,8 +289,6 @@ class CalendarOrtodoxAPI:
                     # If still empty, fall back to getting all text
                     if not saints_text:
                         saints_text = content_cell.get_text(strip=True)
-
-                    feast_level = FEAST_LEVEL_NORMAL
 
                 # Extract fasting info from comments
                 fasting_info = []
