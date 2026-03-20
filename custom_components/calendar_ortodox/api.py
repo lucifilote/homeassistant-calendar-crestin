@@ -588,8 +588,11 @@ class CatholicCalendarAPI:
         else:
             feast_level = CATHOLIC_FEAST_LEVEL_OPTIONAL
 
-        content_clean = re.sub(r"&#8224;", "†", content)
-        content_clean = re.sub(r"†", "", content_clean)
+        content_clean = re.sub(r"&#8224;", " ", content)
+        content_clean = re.sub(r"†", " ", content_clean)
+        content_clean = re.sub(r"\s+", " ", content_clean).strip()
+        content_clean = re.sub(r"\s+([A-Z])", r" \1", content_clean)
+        content_clean = re.sub(r"([a-z])\s+([A-Z])", r"\1 \2", content_clean)
         content_clean = re.sub(r"\s+", " ", content_clean).strip()
 
         feast_name = None
