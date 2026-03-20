@@ -536,14 +536,16 @@ class CatholicFeastDaysCalendar(CoordinatorEntity, CalendarEntity):
 
     def _create_event(self, day_info: CatholicCalendarDay) -> CalendarEvent:
         """Create a calendar event from day info."""
+        feast_name = day_info.feast_name if day_info.feast_name else day_info.saints
+
         if day_info.feast_level == CATHOLIC_FEAST_LEVEL_SOLEMNITY:
-            summary = f"🌟 {day_info.saints}"
+            summary = f"🌟 {feast_name}"
         elif day_info.feast_level == CATHOLIC_FEAST_LEVEL_FEAST:
-            summary = f"✝️ {day_info.saints}"
+            summary = f"✝️ {feast_name}"
         else:
             summary = day_info.saints
 
-        description = day_info.feast_name or summary
+        description = day_info.saints
 
         start = dt_util.start_of_local_day(
             datetime.combine(day_info.date, datetime.min.time())
