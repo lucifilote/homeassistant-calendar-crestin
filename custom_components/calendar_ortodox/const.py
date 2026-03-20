@@ -1,4 +1,5 @@
 """Constants for the Calendar Ortodox integration."""
+
 from __future__ import annotations
 
 from datetime import timedelta
@@ -7,7 +8,13 @@ DOMAIN = "calendar_ortodox"
 
 # API Configuration
 BASE_URL = "https://www.noutati-ortodoxe.ro/calendar-ortodox/"
+CATHOLIC_BASE_URL = "https://www.catholica.ro/calendar-romano-catolic-"
 DEFAULT_YEAR = None  # None means current year
+
+# Calendar types
+CALENDAR_TYPE_ORTHODOX = "orthodox"
+CALENDAR_TYPE_CATHOLIC = "catholic"
+CALENDAR_TYPE_BOTH = "both"
 
 # Update interval
 SCAN_INTERVAL = timedelta(hours=6)  # Update 4 times per day
@@ -16,11 +23,13 @@ SCAN_INTERVAL = timedelta(hours=6)  # Update 4 times per day
 CONF_LANGUAGE = "language"
 CONF_INCLUDE_FASTING = "include_fasting"
 CONF_INCLUDE_READINGS = "include_readings"
+CONF_CALENDAR_TYPE = "calendar_type"
 
 # Default values
 DEFAULT_LANGUAGE = "ro"
 DEFAULT_INCLUDE_FASTING = True
 DEFAULT_INCLUDE_READINGS = True
+DEFAULT_CALENDAR_TYPE = CALENDAR_TYPE_ORTHODOX
 
 # Entity attributes
 ATTR_SAINTS = "saints"

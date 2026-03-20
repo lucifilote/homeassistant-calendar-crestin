@@ -1,4 +1,5 @@
 """The Calendar Ortodox integration."""
+
 from __future__ import annotations
 
 import logging
@@ -11,8 +12,16 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import CalendarOrtodoxAPI
-from .const import DOMAIN, SCAN_INTERVAL
+from .api import CalendarOrtodoxAPI, CatholicCalendarAPI
+from .const import (
+    CALENDAR_TYPE_BOTH,
+    CALENDAR_TYPE_CATHOLIC,
+    CALENDAR_TYPE_ORTHODOX,
+    CONF_CALENDAR_TYPE,
+    DEFAULT_CALENDAR_TYPE,
+    DOMAIN,
+    SCAN_INTERVAL,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,9 +33,17 @@ SERVICE_REFRESH_CALENDAR = "refresh_calendar"
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Calendar Ortodox from a config entry."""
     session = async_get_clientsession(hass)
-    api = CalendarOrtodoxAPI(session)
+    calendar_type = entry.data.get(CONF_CALENDAR_TYPE, DEFAULT_CALENDAR_TYPE)
 
-    coordinator = CalendarOrtodoxDataUpdateCoordinator(hass, api)
+    apis = {}
+
+    if calendar_type in (CALENDAR_TYPE_ORTHODOX, CALENDAR_TYPE_BOTH):
+        apis[CALENDAR_TYPE_ORTHODOX] = CalendarOrtodoxAPI(session)
+
+    if calendar_type in (CALENDAR_TYPE_CATHOLIC, CALENDAR_TYPE_BOTH):
+        apis[CALENDAR_TYPE_CATHOLIC] = CatholicCalendarAPI(session)
+
+    coordinator = CalendarDataUpdateCoordinator(hass, apis, calendar_type)
 
     try:
         await coordinator.async_config_entry_first_refresh()
@@ -38,7 +55,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    # Register the refresh service
     async def handle_refresh_calendar(call: ServiceCall) -> None:
         """Handle the refresh_calendar service call."""
         _LOGGER.info("Manual calendar refresh requested")
@@ -58,18 +74,22 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         hass.data[DOMAIN].pop(entry.entry_id)
-        
-        # Unregister service when last entry is removed
+
         if not hass.data[DOMAIN]:
             hass.services.async_remove(DOMAIN, SERVICE_REFRESH_CALENDAR)
 
     return unload_ok
 
 
-class CalendarOrtodoxDataUpdateCoordinator(DataUpdateCoordinator):
-    """Class to manage fetching Calendar Ortodox data."""
+class CalendarDataUpdateCoordinator(DataUpdateCoordinator):
+    """Class to manage fetching calendar data for both Orthodox and Catholic."""
 
-    def __init__(self, hass: HomeAssistant, api: CalendarOrtodoxAPI) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        apis: dict[str, CalendarOrtodoxAPI | CatholicCalendarAPI],
+        calendar_type: str,
+    ) -> None:
         """Initialize the coordinator."""
         super().__init__(
             hass,
@@ -77,20 +97,29 @@ class CalendarOrtodoxDataUpdateCoordinator(DataUpdateCoordinator):
             name=DOMAIN,
             update_interval=SCAN_INTERVAL,
         )
-        self.api = api
+        self.apis = apis
+        self.calendar_type = calendar_type
 
     async def _async_update_data(self) -> dict:
-        """Fetch data from API."""
+        """Fetch data from API(s)."""
+        result = {"calendar_type": self.calendar_type}
+
         try:
-            # Get the full year calendar
-            calendar_data = await self.api.get_year_calendar()
-            
-            _LOGGER.debug("Successfully fetched calendar data with %d months", len(calendar_data))
-            
-            return {
-                "calendar": calendar_data,
-                "api": self.api,
-            }
+            if CALENDAR_TYPE_ORTHODOX in self.apis:
+                _LOGGER.debug("Fetching Orthodox calendar")
+                result["orthodox"] = await self.apis[
+                    CALENDAR_TYPE_ORTHODOX
+                ].get_year_calendar()
+
+            if CALENDAR_TYPE_CATHOLIC in self.apis:
+                _LOGGER.debug("Fetching Catholic calendar")
+                result["catholic"] = await self.apis[
+                    CALENDAR_TYPE_CATHOLIC
+                ].get_year_calendar()
+
+            _LOGGER.debug("Successfully fetched calendar data")
+            return result
+
         except Exception as err:
             _LOGGER.error("Error fetching calendar data: %s", err)
             raise UpdateFailed(f"Error communicating with API: {err}") from err
