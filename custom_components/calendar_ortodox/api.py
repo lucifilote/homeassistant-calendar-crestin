@@ -93,10 +93,10 @@ class OrthodoxCalendarDay(LiturgicalDay):
         self.day_of_week = day_of_week
         self._saints = saints
         self.feast_day = feast_day
-        self.feast_level = feast_level
+        self._feast_level = feast_level
         self.fasting_info = fasting_info or []
         self.moon_phase = moon_phase
-        self.is_sunday = is_sunday
+        self._is_sunday = is_sunday
         self.sunday_title = sunday_title
         self.sunday_readings = sunday_readings or {}
 
@@ -114,6 +114,16 @@ class OrthodoxCalendarDay(LiturgicalDay):
     def is_feast(self) -> bool:
         """Return True if this is a feast day."""
         return self.feast_day
+
+    @property
+    def feast_level(self) -> str:
+        """Return feast level."""
+        return self._feast_level
+
+    @property
+    def is_sunday(self) -> bool:
+        """Return True if this is a Sunday."""
+        return self._is_sunday
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
@@ -411,8 +421,8 @@ class CatholicCalendarDay(LiturgicalDay):
         self.day_of_week = day_of_week
         self._saints = saints
         self.feast_name = feast_name
-        self.feast_level = feast_level
-        self.is_sunday = is_sunday
+        self._feast_level = feast_level
+        self._is_sunday = is_sunday
 
     @property
     def date(self) -> date:
@@ -432,6 +442,16 @@ class CatholicCalendarDay(LiturgicalDay):
             CATHOLIC_FEAST_LEVEL_FEAST,
             CATHOLIC_FEAST_LEVEL_MEMORIAL,
         )
+
+    @property
+    def feast_level(self) -> str:
+        """Return feast level."""
+        return self._feast_level
+
+    @property
+    def is_sunday(self) -> bool:
+        """Return True if this is a Sunday."""
+        return self._is_sunday
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
@@ -517,49 +537,83 @@ class CatholicCalendarAPI:
         soup = BeautifulSoup(html, "lxml")
         month_data = []
 
-        table = soup.find("table", border="0")
-        if not table:
-            _LOGGER.warning(
-                "No table found in Catholic calendar page for %d/%d", month, year
-            )
-            return []
+        page_text = soup.get_text()
 
-        rows = table.find_all("tr")
+        day_pattern = re.compile(
+            r"(\d+)\s*([LMJVSD])\s*(.+?)(?=\d+\s+[LMJVSD]|$)", re.DOTALL
+        )
 
-        for row in rows:
-            cells = row.find_all("td")
+        matches = day_pattern.findall(page_text)
 
-            if len(cells) < 3:
+        for match in matches:
+            day_num = int(match[0])
+            day_of_week = match[1].strip()
+            content = match[2].strip().replace("\n", " ").replace("\r", "")
+
+            if not content:
                 continue
 
-            day_cell = cells[0]
-            weekday_cell = cells[1]
-            content_cell = cells[2]
-
-            try:
-                day_num = int(day_cell.get_text(strip=True))
-            except (ValueError, AttributeError):
-                continue
-
-            day_of_week = weekday_cell.get_text(strip=True)
             is_sunday = day_of_week == "D"
 
-            cell_html = str(content_cell)
-
-            if "stil2" in cell_html:
-                month_data.append(
-                    self._parse_feast_row(
-                        day_num, day_of_week, content_cell, year, month, is_sunday
-                    )
+            month_data.append(
+                self._parse_content(
+                    day_num, day_of_week, content, year, month, is_sunday
                 )
-            else:
-                month_data.append(
-                    self._parse_normal_row(
-                        day_num, day_of_week, content_cell, year, month, is_sunday
-                    )
-                )
+            )
 
+        _LOGGER.debug(
+            "Parsed %d days for Catholic calendar %d/%d", len(month_data), month, year
+        )
         return month_data
+
+    def _parse_content(
+        self,
+        day_num: int,
+        day_of_week: str,
+        content: str,
+        year: int,
+        month: int,
+        is_sunday: bool,
+    ) -> CatholicCalendarDay:
+        """Parse content string into CatholicCalendarDay."""
+        content = content.strip()
+
+        has_dagger = "&#8224;" in content or "†" in content
+        has_double_star = "**" in content
+        has_single_star = "*" in content
+
+        if has_dagger and has_double_star:
+            feast_level = CATHOLIC_FEAST_LEVEL_SOLEMNITY
+        elif has_dagger:
+            feast_level = CATHOLIC_FEAST_LEVEL_FEAST
+        elif has_double_star:
+            feast_level = CATHOLIC_FEAST_LEVEL_MEMORIAL
+        elif has_single_star:
+            feast_level = CATHOLIC_FEAST_LEVEL_OPTIONAL
+        else:
+            feast_level = CATHOLIC_FEAST_LEVEL_OPTIONAL
+
+        content_clean = re.sub(r"&#8224;", "", content)
+        content_clean = re.sub(r"\s+", " ", content_clean).strip()
+
+        parts = content_clean.split("Fer.")
+        if len(parts) > 1:
+            feast_name = parts[0].strip()
+            saints = "Fer." + parts[1].strip()
+        else:
+            feast_name = None
+            saints = content_clean
+
+        return CatholicCalendarDay(
+            day=day_num,
+            month=month,
+            year=year,
+            day_of_week=day_of_week,
+            saints=saints,
+            feast_name=feast_name or saints,
+            feast_level=feast_level,
+            is_sunday=is_sunday,
+        )
 
     def _parse_feast_row(
         self,
@@ -598,42 +652,3 @@ class CatholicCalendarAPI:
             feast_level=feast_level,
             is_sunday=is_sunday,
         )
-
-    def _parse_normal_row(
-        self,
-        day_num: int,
-        day_of_week: str,
-        content_cell,
-        year: int,
-        month: int,
-        is_sunday: bool,
-    ) -> CatholicCalendarDay:
-        """Parse a normal day row (stil1)."""
-        text = content_cell.get_text(separator=" ", strip=True)
-        text = re.sub(r"\s+", " ", text)
-        text = re.sub(r"\s+\d+$", "", text)
-
-        return CatholicCalendarDay(
-            day=day_num,
-            month=month,
-            year=year,
-            day_of_week=day_of_week,
-            saints=text,
-            feast_level=CATHOLIC_FEAST_LEVEL_OPTIONAL,
-            is_sunday=is_sunday,
-        )
-
-    def _determine_feast_level(self, content_cell) -> str:
-        """Determine feast level from cell content."""
-        text = content_cell.get_text()
-
-        if "†" in text and "**" in text:
-            return CATHOLIC_FEAST_LEVEL_SOLEMNITY
-        elif "†" in text:
-            return CATHOLIC_FEAST_LEVEL_FEAST
-        elif "**" in text:
-            return CATHOLIC_FEAST_LEVEL_MEMORIAL
-        elif "*" in text:
-            return CATHOLIC_FEAST_LEVEL_OPTIONAL
-
-        return CATHOLIC_FEAST_LEVEL_MEMORIAL
